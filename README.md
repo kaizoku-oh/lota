@@ -1,99 +1,30 @@
 # LOTA: Logging Over The Air
 
-LOTA is a remote logging system based on ESP32, that makes remote logging and debugging in robotics applications easier. It does tha by connecting to the USART port of the robot
-and redirects all received logging data to all connected websocket clients.
+<!-- ![LOTA logo](https://github.com/kaizoku-oh/lota/blob/main/docs/image/logo.png) -->
+<!-- ![](https://github.com/<OWNER>/<REPOSITORY>/workflows/<WORKFLOW_NAME>/badge.svg) -->
+![GitHub Build workflow status](https://github.com/kaizoku-oh/lota/workflows/Build/badge.svg)
+![GitHub release](https://img.shields.io/github/v/release/kaizoku-oh/lota)
+![GitHub issues](https://img.shields.io/github/issues/kaizoku-oh/lota)
+![GitHub top language](https://img.shields.io/github/languages/top/kaizoku-oh/lota)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Twitter follow](https://img.shields.io/twitter/follow/kaizoku_ouh?style=social)
 
-## Getting Started 🚀
+LOTA is a remote logging system based on ESP32, making remote logging and debugging in IoT and robotics applications much easier. It does this by connecting to the serial port of any embedded system and exposing a WIFI AP and a web dashboard showing the logging data.
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+## TODO ✅
 
-To get started you need to have a local development environnement for ESP-IDF.
-See [website](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/) for ESP-IDF setup instructions.
-Once your environnement is ready you need to add the websocket component to esp-idf
+* Start with an empty AP example on platformio ✅
+* Add http server handling multiple connections
+* Design a basic web dashboard with Bootstrap
+* Add websocket server and integrate it with the http server
+* Add js websocket client to the web dashboard
+* Add counter task to send counter value periodically to the js websocket client
+* Add uart task to handle received uart data and send it to the js websocket client
+* Add ascii terminal view in the web dashboard to display received uart data.
+* Add device status info view to the web dashboard
 
+### How to open menuconfig:
+```bash
+# open platformio terminal and type this command
+$ pio run -t menuconfig
 ```
-cd $IDF_PATH/components
-git clone https://github.com/Molorius/esp32-websocket
-```
-
-PS: IDF_PATH is your ESP-IDF setup directory, usually: /home/username/esp/esp-idf
-
-### Prerequisites 📋
-
-What things you need to install the software and how to install them
-
-```
-Give examples
-```
-
-### Installing
-
-A step by step series of examples that tell you how to get a development env running
-
-Say what the step will be
-
-```
-Give the example
-```
-
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
