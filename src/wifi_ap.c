@@ -99,16 +99,6 @@ void _wifi_init_soft_ap(void)
 
 void wifi_ap_init(void)
 {
-  esp_err_t s32RetVal;
-
-  /* Initialize NVS */
-  s32RetVal = nvs_flash_init();
-  if((ESP_ERR_NVS_NO_FREE_PAGES == s32RetVal) || (ESP_ERR_NVS_NEW_VERSION_FOUND == s32RetVal))
-  {
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    s32RetVal = nvs_flash_init();
-  }
-  ESP_ERROR_CHECK(s32RetVal);
   ESP_LOGI(WIFI_AP_TAG, "Starting ESP32 WIFI in Access Point mode");
   _wifi_init_soft_ap();
 }

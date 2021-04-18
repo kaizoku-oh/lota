@@ -1,10 +1,25 @@
 #include <esp_log.h>
+#include <esp_event.h>
+#include <esp_system.h>
+#include <esp_spiffs.h>
+#include <nvs_flash.h>
+#include <sys/param.h>
+
 #include "web_server.h"
 
 static esp_err_t _root_get_handler(httpd_req_t *pstRequest);
 
 #define WEB_SERVER_TAG                           "WEB_SERVER"
+#define FILE_CONTENT_LENGTH                      8192
 #define WEB_SERVER_QUERY_PARAM_MAX_SIZE          32
+
+static const esp_vfs_spiffs_conf_t stSpiffsConfig =
+{
+  .base_path = "/spiffs",
+  .partition_label = NULL,
+  .max_files = 5,
+  .format_if_mount_failed = true
+};
 
 static const httpd_uri_t stRootUriHandler =
 {
@@ -14,8 +29,57 @@ static const httpd_uri_t stRootUriHandler =
   .user_ctx = NULL
 };
 
-static esp_err_t _root_get_handler(httpd_req_t *pstRequest)
+static const httpd_uri_t stIndexUriHandler =
 {
+  .uri = "/index.html",
+  .method = HTTP_GET,
+  .handler = _root_get_handler,
+  .user_ctx = NULL
+};
+
+static esp_err_t _init_filesystem(void)
+{
+  esp_err_t s32RetVal;
+  uint32_t u32Total;
+  uint32_t u32Used;
+
+  ESP_LOGI(WEB_SERVER_TAG, "Initializing SPIFFS");
+  s32RetVal = esp_vfs_spiffs_register(&stSpiffsConfig);
+  switch(s32RetVal)
+  {
+  case ESP_OK:
+    s32RetVal = esp_spiffs_info(NULL, &u32Total, &u32Used);
+    if(ESP_OK != s32RetVal)
+    {
+      ESP_LOGE(WEB_SERVER_TAG,
+               "Failed to get SPIFFS partition information (%s)",
+               esp_err_to_name(s32RetVal));
+    }
+    else
+    {
+      ESP_LOGI(WEB_SERVER_TAG, "Partition size: total = %d - used = %d", u32Total, u32Used);
+    }
+    break;
+  case ESP_FAIL:
+    ESP_LOGE(WEB_SERVER_TAG, "Failed to mount or format filesystem");
+    break;
+  case ESP_ERR_NOT_FOUND:
+    ESP_LOGE(WEB_SERVER_TAG, "Failed to find SPIFFS partition");
+    break;
+  default:
+    ESP_LOGE(WEB_SERVER_TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(s32RetVal));
+    break;
+  }
+  return s32RetVal;
+}
+
+esp_err_t _root_get_handler(httpd_req_t *pstRequest)
+{
+  esp_err_t s32RetVal;
+  char *pcFileContent;
+  int32_t s32ChunkLength;
+  FILE *pstFileDescriptor;
+
   char *pcString;
   char tcQueryParam[WEB_SERVER_QUERY_PARAM_MAX_SIZE];
   uint32_t u32StringLength;
@@ -58,17 +122,49 @@ static esp_err_t _root_get_handler(httpd_req_t *pstRequest)
     }
     free(pcString);
   }
-  /* 3. Send hardcoded response */
-  httpd_resp_send(pstRequest,
-                  "<h1>Welcome to LOTA web dashboard</h1>",
-                  (sizeof("<h1>Welcome to LOTA web dashboard</h1>")-1));
-  /* After sending the HTTP response the old HTTP request
-   * headers are lost. Check if HTTP request headers can be read now. */
-  if(0 == httpd_req_get_hdr_value_len(pstRequest, "Host"))
+  /* 3. Open html file */
+  s32RetVal = ESP_OK;
+  pstFileDescriptor = fopen("/spiffs/index.html", "r");
+  if(pstFileDescriptor)
   {
-    ESP_LOGI(WEB_SERVER_TAG, "Request headers lost");
+    pcFileContent = malloc(FILE_CONTENT_LENGTH);
+    do
+    {
+      /* 4. Read a chunk of data from the file */
+      s32ChunkLength = fread(pcFileContent,
+                            sizeof(uint8_t),
+                            sizeof(pcFileContent),
+                            pstFileDescriptor);
+      if(s32ChunkLength > 0)
+      {
+        /* 5. Send the chunk */
+        if(ESP_OK != httpd_resp_send_chunk(pstRequest, pcFileContent, s32ChunkLength))
+        {
+          ESP_LOGE(WEB_SERVER_TAG, "File sending failed");
+          httpd_resp_sendstr_chunk(pstRequest, NULL);
+          httpd_resp_send_err(pstRequest, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+          s32RetVal = ESP_FAIL;
+          break;
+        }
+      }
+      else if(0 == s32ChunkLength)
+      {
+        ESP_LOGI(WEB_SERVER_TAG, "File reading complete");
+        break;
+      }
+    }
+    while(s32ChunkLength != 0);
+    fclose(pstFileDescriptor);
+    free(pcFileContent);
+    ESP_LOGI(WEB_SERVER_TAG, "File sending complete");
+    httpd_resp_send_chunk(pstRequest, NULL, 0);
   }
-  return ESP_OK;
+  else
+  {
+    ESP_LOGE(WEB_SERVER_TAG, "Failed to open file");
+    s32RetVal = ESP_FAIL;
+  }
+  return s32RetVal;
 }
 
 httpd_handle_t web_server_start(void)
@@ -76,11 +172,13 @@ httpd_handle_t web_server_start(void)
   httpd_handle_t pvServer;
   httpd_config_t stConfig = HTTPD_DEFAULT_CONFIG();
 
+  _init_filesystem();
   ESP_LOGI(WEB_SERVER_TAG, "Starting server on port: '%d'", stConfig.server_port);
   if(ESP_OK == httpd_start(&pvServer, &stConfig))
   {
     ESP_LOGI(WEB_SERVER_TAG, "Registering URI handlers");
     httpd_register_uri_handler(pvServer, &stRootUriHandler);
+    httpd_register_uri_handler(pvServer, &stIndexUriHandler);
   }
   else
   {
