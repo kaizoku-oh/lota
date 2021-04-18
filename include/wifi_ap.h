@@ -11,6 +11,6 @@
 typedef void (*pf_wifi_ap_cb)(int32_t);
 
 void wifi_ap_init(void);
-void wifi_ap_register_cb(pf_wifi_ap_cb pf_cb);
+void wifi_ap_register_cb(pf_wifi_ap_cb);
 
 #endif /* _WIFI_AP_H_ */

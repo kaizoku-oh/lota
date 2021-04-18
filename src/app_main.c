@@ -1,5 +1,6 @@
 #include <esp_log.h>
 #include "wifi_ap.h"
+#include "web_server.h"
 
 #define MAIN_APP_TAG                                 "MAIN_APP"
 
@@ -23,4 +24,6 @@ void app_main(void)
   ESP_LOGI(MAIN_APP_TAG, "Main App started");
   wifi_ap_register_cb(_wifi_ap_handler);
   wifi_ap_init();
+
+  web_server_start();
 }
