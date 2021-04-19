@@ -8,6 +8,9 @@
 #include "web_server.h"
 
 static esp_err_t _root_get_handler(httpd_req_t *pstRequest);
+static esp_err_t _booststrap_js_get_handler(httpd_req_t *pstRequest);
+static esp_err_t _booststrap_css_get_handler(httpd_req_t *pstRequest);
+static esp_err_t _jquery_js_get_handler(httpd_req_t *pstRequest);
 
 #define WEB_SERVER_TAG                           "WEB_SERVER"
 #define FILE_CONTENT_LENGTH                      8192
@@ -34,6 +37,30 @@ static const httpd_uri_t stIndexUriHandler =
   .uri = "/index.html",
   .method = HTTP_GET,
   .handler = _root_get_handler,
+  .user_ctx = NULL
+};
+
+static const httpd_uri_t stBootstrapJsUriHandler =
+{
+  .uri = "/bootstrap.bundle.min.js",
+  .method = HTTP_GET,
+  .handler = _booststrap_js_get_handler,
+  .user_ctx = NULL
+};
+
+static const httpd_uri_t stBootstrapCssUriHandler =
+{
+  .uri = "/bootstrap.min.css",
+  .method = HTTP_GET,
+  .handler = _booststrap_css_get_handler,
+  .user_ctx = NULL
+};
+
+static const httpd_uri_t stJQueryJsUriHandler =
+{
+  .uri = "/jquery-3.6.0.js",
+  .method = HTTP_GET,
+  .handler = _jquery_js_get_handler,
   .user_ctx = NULL
 };
 
@@ -167,6 +194,162 @@ esp_err_t _root_get_handler(httpd_req_t *pstRequest)
   return s32RetVal;
 }
 
+esp_err_t _booststrap_js_get_handler(httpd_req_t *pstRequest)
+{
+  esp_err_t s32RetVal;
+  char *pcFileContent;
+  int32_t s32ChunkLength;
+  FILE *pstFileDescriptor;
+
+  /* 1. Open JS file */
+  s32RetVal = ESP_OK;
+  pstFileDescriptor = fopen("/spiffs/bootstrap.bundle.min.js", "r");
+  if(pstFileDescriptor)
+  {
+    pcFileContent = malloc(FILE_CONTENT_LENGTH);
+    do
+    {
+      /* 2. Read a chunk of data from the file */
+      s32ChunkLength = fread(pcFileContent,
+                            sizeof(uint8_t),
+                            sizeof(pcFileContent),
+                            pstFileDescriptor);
+      if(s32ChunkLength > 0)
+      {
+        /* 3. Send the chunk */
+        if(ESP_OK != httpd_resp_send_chunk(pstRequest, pcFileContent, s32ChunkLength))
+        {
+          ESP_LOGE(WEB_SERVER_TAG, "File sending failed");
+          httpd_resp_sendstr_chunk(pstRequest, NULL);
+          httpd_resp_send_err(pstRequest, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+          s32RetVal = ESP_FAIL;
+          break;
+        }
+      }
+      else if(0 == s32ChunkLength)
+      {
+        ESP_LOGI(WEB_SERVER_TAG, "File reading complete");
+        break;
+      }
+    }
+    while(s32ChunkLength != 0);
+    fclose(pstFileDescriptor);
+    free(pcFileContent);
+    ESP_LOGI(WEB_SERVER_TAG, "File sending complete");
+    httpd_resp_send_chunk(pstRequest, NULL, 0);
+  }
+  else
+  {
+    ESP_LOGE(WEB_SERVER_TAG, "Failed to open file");
+    s32RetVal = ESP_FAIL;
+  }
+  return s32RetVal;
+}
+
+esp_err_t _booststrap_css_get_handler(httpd_req_t *pstRequest)
+{
+  esp_err_t s32RetVal;
+  char *pcFileContent;
+  int32_t s32ChunkLength;
+  FILE *pstFileDescriptor;
+
+  /* 1. Open CSS file */
+  s32RetVal = ESP_OK;
+  pstFileDescriptor = fopen("/spiffs/bootstrap.min.css", "r");
+  if(pstFileDescriptor)
+  {
+    pcFileContent = malloc(FILE_CONTENT_LENGTH);
+    do
+    {
+      /* 2. Read a chunk of data from the file */
+      s32ChunkLength = fread(pcFileContent,
+                            sizeof(uint8_t),
+                            sizeof(pcFileContent),
+                            pstFileDescriptor);
+      if(s32ChunkLength > 0)
+      {
+        /* 3. Send the chunk */
+        if(ESP_OK != httpd_resp_send_chunk(pstRequest, pcFileContent, s32ChunkLength))
+        {
+          ESP_LOGE(WEB_SERVER_TAG, "File sending failed");
+          httpd_resp_sendstr_chunk(pstRequest, NULL);
+          httpd_resp_send_err(pstRequest, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+          s32RetVal = ESP_FAIL;
+          break;
+        }
+      }
+      else if(0 == s32ChunkLength)
+      {
+        ESP_LOGI(WEB_SERVER_TAG, "File reading complete");
+        break;
+      }
+    }
+    while(s32ChunkLength != 0);
+    fclose(pstFileDescriptor);
+    free(pcFileContent);
+    ESP_LOGI(WEB_SERVER_TAG, "File sending complete");
+    httpd_resp_send_chunk(pstRequest, NULL, 0);
+  }
+  else
+  {
+    ESP_LOGE(WEB_SERVER_TAG, "Failed to open file");
+    s32RetVal = ESP_FAIL;
+  }
+  return s32RetVal;
+}
+
+esp_err_t _jquery_js_get_handler(httpd_req_t *pstRequest)
+{
+  esp_err_t s32RetVal;
+  char *pcFileContent;
+  int32_t s32ChunkLength;
+  FILE *pstFileDescriptor;
+
+  /* 1. Open jQuery file */
+  s32RetVal = ESP_OK;
+  pstFileDescriptor = fopen("/spiffs/jquery-3.6.0.js", "r");
+  if(pstFileDescriptor)
+  {
+    pcFileContent = malloc(FILE_CONTENT_LENGTH);
+    do
+    {
+      /* 2. Read a chunk of data from the file */
+      s32ChunkLength = fread(pcFileContent,
+                            sizeof(uint8_t),
+                            sizeof(pcFileContent),
+                            pstFileDescriptor);
+      if(s32ChunkLength > 0)
+      {
+        /* 3. Send the chunk */
+        if(ESP_OK != httpd_resp_send_chunk(pstRequest, pcFileContent, s32ChunkLength))
+        {
+          ESP_LOGE(WEB_SERVER_TAG, "File sending failed");
+          httpd_resp_sendstr_chunk(pstRequest, NULL);
+          httpd_resp_send_err(pstRequest, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+          s32RetVal = ESP_FAIL;
+          break;
+        }
+      }
+      else if(0 == s32ChunkLength)
+      {
+        ESP_LOGI(WEB_SERVER_TAG, "File reading complete");
+        break;
+      }
+    }
+    while(s32ChunkLength != 0);
+    fclose(pstFileDescriptor);
+    free(pcFileContent);
+    ESP_LOGI(WEB_SERVER_TAG, "File sending complete");
+    httpd_resp_send_chunk(pstRequest, NULL, 0);
+  }
+  else
+  {
+    ESP_LOGE(WEB_SERVER_TAG, "Failed to open file");
+    s32RetVal = ESP_FAIL;
+  }
+  return s32RetVal;
+}
+
 httpd_handle_t web_server_start(void)
 {
   httpd_handle_t pvServer;
@@ -179,6 +362,9 @@ httpd_handle_t web_server_start(void)
     ESP_LOGI(WEB_SERVER_TAG, "Registering URI handlers");
     httpd_register_uri_handler(pvServer, &stRootUriHandler);
     httpd_register_uri_handler(pvServer, &stIndexUriHandler);
+    httpd_register_uri_handler(pvServer, &stBootstrapJsUriHandler);
+    httpd_register_uri_handler(pvServer, &stBootstrapCssUriHandler);
+    httpd_register_uri_handler(pvServer, &stJQueryJsUriHandler);
   }
   else
   {
